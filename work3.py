@@ -6,9 +6,9 @@ import pandas as pd
 from langchain_openai import AzureChatOpenAI
 import numpy as np
 
-os.environ["AZURE_OPENAI_API_KEY"] = "xxxxx"
-os.environ["AZURE_OPENAI_ENDPOINT"] = "xx"
-os.environ["AZURE_OPENAI_API_VERSION"] = "xxx"
+os.environ["AZURE_OPENAI_API_KEY"] = "70683718b85747ea89724db4214873e7"
+os.environ["AZURE_OPENAI_ENDPOINT"] = "https://codedocumentation.openai.azure.com/"
+os.environ["AZURE_OPENAI_API_VERSION"] = "2024-02-15-preview"
 os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"] = "gpt-4o"
 
 model = AzureChatOpenAI(
@@ -48,30 +48,30 @@ def transform_row_with_ai(input_row, transformation_dict):
     clean_input = clean_row_for_json(input_row)
     
     prompt = f"""
-You are a data transformation engine.
+        You are a data transformation engine.
 
-Your job is to transform the given input row using the provided structured transformation rules.
+        Your job is to transform the given input row using the provided structured transformation rules.
 
-----------------------
-TRANSFORMATION RULES:
-{json.dumps(transformation_dict, indent=2)}
-----------------------
+        ----------------------
+        TRANSFORMATION RULES:
+        {json.dumps(transformation_dict, indent=2)}
+        ----------------------
 
-RULE TYPES:
-- 'T' (Transform): Replace values using mapping dictionary.
-- 'D' (Default): Replace column value with the default value given.
-- 'O' (One-to-One): Copy the source column's value as-is into the target column.
+        RULE TYPES:
+        - 'T' (Transform): Replace values using mapping dictionary.
+        - 'D' (Default): Replace column value with the default value given.
+        - 'O' (One-to-One): Copy the source column's value as-is into the target column.
 
-INSTRUCTIONS:
-1. Always return **target column names** (not source column names).
-2. If value is missing or not found in a mapping, leave the value as blank "".
-3. Return ONLY a valid JSON object, no additional text or explanation.
+        INSTRUCTIONS:
+        1. Always return **target column names** (not source column names).
+        2. If value is missing or not found in a mapping, leave the value as blank "".
+        3. Return ONLY a valid JSON object, no additional text or explanation.
 
-INPUT ROW:
-{json.dumps(clean_input, indent=2)}
+        INPUT ROW:
+        {json.dumps(clean_input, indent=2)}
 
-Return only the transformed row as a valid JSON dictionary with final target column names.
-"""
+        Return only the transformed row as a valid JSON dictionary with final target column names.
+        """
 
     try:
         response = model.invoke(prompt)
