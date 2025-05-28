@@ -1,0 +1,25 @@
+1:
+original_columns = list(df.columns)
+new_columns = [col for col in output_df.columns if col not in original_columns]
+final_column_order = original_columns + new_columns
+output_df = output_df[final_column_order]
+
+2:
+# Store transformed rows
+transformed_rows = []
+
+# Transform each row
+for idx, (_, row) in enumerate(df.iterrows()):
+    status_text.text(f"Transforming row {idx + 1} of {total_rows}")
+    progress_bar.progress((idx + 1) / total_rows)
+
+    row_dict = row.to_dict()
+    row_dict = {k: (v if pd.notna(v) else None) for k, v in row_dict.items()}
+
+    transformed_row = transformer.transform_row(row_dict, rules)
+    transformed_rows.append(transformed_row)
+
+    time.sleep(0.1)
+
+# Create a new DataFrame with only transformed columns
+output_df = pd.DataFrame(transformed_rows)
