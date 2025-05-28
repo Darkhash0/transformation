@@ -1,0 +1,116 @@
+from flask import Flask, render_template, request, redirect, send_file import pandas as pd import os import json import io import time from langchain_openai import AzureChatOpenAI
+
+app = Flask(name)
+
+UPLOAD_FOLDER = 'uploads' if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+Simple session memory
+
+session_data = { "filename": None, "df": None, "columns": [], "rules": {} }
+
+class AITransformer: def init(self, api_key, endpoint, api_version, deployment_name): os.environ["AZURE_OPENAI_API_KEY"] = api_key os.environ["AZURE_OPENAI_ENDPOINT"] = endpoint os.environ["AZURE_OPENAI_API_VERSION"] = api_version os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"] = deployment_name
+
+self.model = AzureChatOpenAI(
+        openai_api_version=api_version,
+        azure_deployment=deployment_name,
+        temperature=0.0
+    )
+
+def transform_row(self, row_data: dict, rules: dict) -> dict:
+    prompt = f"""
+
+You are a data transformation expert. Apply the following transformation rules to the input data row.
+
+RULE TYPES:
+
+T (Translate): Transform values based on mapping (e.g., "Male" -> "M")
+
+D (Default): Replace null/empty values with a default value
+
+C (Concatenate): Join multiple fields with a separator
+
+R (Rename): Copy column as-is but with a new name
+
+X (Custom): Apply custom logic as described
+
+
+RULES: {json.dumps(rules, indent=2)}
+
+INPUT ROW: {json.dumps(row_data, indent=2)}
+
+Only return the transformed target columns as JSON. Do not include original columns. """ try: response = self.model.invoke(prompt) result_text = response.content.strip()
+
+if "```json" in result_text:
+            result_text = result_text.split("```json")[1].split("```")[0]
+        elif "```" in result_text:
+            result_text = result_text.split("```")[1].split("```")[0]
+
+        return json.loads(result_text)
+    except Exception as e:
+        print("Error transforming row:", e)
+        return {}
+
+@app.route('/', methods=['GET', 'POST']) def upload(): if request.method == 'POST': file = request.files['csv_file'] if file: filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename) file.save(filepath) df = pd.read_csv(filepath) session_data['filename'] = file.filename session_data['df'] = df session_data['columns'] = list(df.columns) return redirect('/rules') return render_template('upload.html')
+
+@app.route('/rules', methods=['GET', 'POST']) def rules(): if request.method == 'POST': rules = {} total_rules = int(request.form['total_rules'])
+
+for i in range(total_rules):
+        rule_type = request.form.get(f'rule_type_{i}')
+        target_col = request.form.get(f'target_col_{i}')
+
+        if rule_type == 'T':
+            source_col = request.form.get(f'source_col_{i}')
+            mappings_raw = request.form.get(f'mappings_{i}')
+            mapping = dict(line.split('=') for line in mappings_raw.strip().split('\n') if '=' in line)
+            rules[target_col] = {"type": "T", "rule_payload": {"source_column": source_col, "mapping": mapping}, "target_column": target_col}
+
+        elif rule_type == 'D':
+            source_col = request.form.get(f'source_col_{i}')
+            default_val = request.form.get(f'default_val_{i}')
+            rules[target_col] = {"type": "D", "rule_payload": {"source_column": source_col, "default_value": default_val}, "target_column": target_col}
+
+        elif rule_type == 'C':
+            cols = request.form.get(f'cols_{i}').split(',')
+            sep = request.form.get(f'sep_{i}')
+            rules[target_col] = {"type": "C", "rule_payload": {"columns": [c.strip() for c in cols], "separator": sep}, "target_column": target_col}
+
+        elif rule_type == 'R':
+            source_col = request.form.get(f'source_col_{i}')
+            rules[target_col] = {"type": "R", "rule_payload": {"source_column": source_col}, "target_column": target_col}
+
+        elif rule_type == 'X':
+            source_col = request.form.get(f'source_col_{i}')
+            instr = request.form.get(f'instruction_{i}')
+            rules[target_col] = {"type": "X", "rule_payload": {"source_column": source_col, "instruction": instr}, "target_column": target_col}
+
+    session_data['rules'] = rules
+    return redirect('/transform')
+
+return render_template('rules.html', columns=session_data['columns'])
+
+@app.route('/transform') def transform(): df = session_data['df'] rules = session_data['rules']
+
+transformer = AITransformer(
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+    deployment_name=os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME")
+)
+
+transformed_rows = []
+for _, row in df.iterrows():
+    row_dict = row.to_dict()
+    row_dict = {k: (v if pd.notna(v) else None) for k, v in row_dict.items()}
+    transformed = transformer.transform_row(row_dict, rules)
+    transformed_rows.append(transformed)
+    time.sleep(0.1)
+
+transformed_df = pd.DataFrame(transformed_rows)
+output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'transformed_output.csv')
+transformed_df.to_csv(output_path, index=False)
+return send_file(output_path, as_attachment=True)
+
+if name == 'main': app.run(debug=True)
+
