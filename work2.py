@@ -144,10 +144,16 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 
-# OUTPUT:
+
 '''
-displaying display data function
+
+❗ Problem:
+    Your current implementation only returns the transformed column(s) (e.g., people_gender) from the AI, and drops all the original columns from the final output.
+    displaying display data function
+
 {'people_gender': {'type': 'T', 'rule_payload': {'source_column': 'Gender', 'mapping': {'M': '1', 'F': '2'}}, 'target_column': 'people_gender'}}
+
+WRONG OUTPUT:
 
 AI input:
 {
