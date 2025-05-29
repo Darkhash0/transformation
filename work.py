@@ -33,9 +33,9 @@ def transformation_dict(form_data):
     
 
 
-def process_data(form_data):
-    print('displaying display data function')
-    result_dict = {}
+# def process_data(form_data):
+#     print('displaying display data function')
+#     result_dict = {}
 
     #string to dictionary
     # mapping_str = form_data['mapping']
@@ -67,18 +67,70 @@ def process_data(form_data):
 
 
     # Xform
-    result_dict[form_data["target_column"]] = {
-        "type": form_data["type"],
-        "rule": {
-            "source_column": form_data["source_column"],
-            "instruction": form_data['mapping']
-        },
-        "target_column": form_data["target_column"]
+    # result_dict[form_data["target_column"]] = {
+    #     "type": form_data["type"],
+    #     "rule": {
+    #         "source_column": form_data["source_column"],
+    #         "instruction": form_data['mapping']
+    #     },
+    #     "target_column": form_data["target_column"]
+    #     }
+
+
+    # print(result_dict)
+    # print('\n calling go to func')
+    # go_to_func(result_dict)
+
+
+def process_data(form_data):
+    print('displaying process_data function')
+    result_dict = {}
+
+    rule_type = form_data.get("type")
+
+    if rule_type == "T":
+        # Mapping string to dictionary
+        mapping_str = form_data.get("mapping", "")
+        mapping_dict = {}
+        for line in mapping_str.splitlines():
+            if '=' in line:
+                key, value = line.split('=')
+                mapping_dict[key.strip()] = value.strip()
+
+        result_dict[form_data["target_column"]] = {
+            "type": "T",
+            "rule": {
+                "source_column": form_data["source_column"],
+                "mapping": mapping_dict
+            },
+            "target_column": form_data["target_column"]
         }
 
+    elif rule_type == "O":
+        result_dict[form_data["target_column"]] = {
+            "type": "O",
+            "rule": {
+                "source_column": form_data["source_column"]
+            },
+            "target_column": form_data["target_column"]
+        }
+
+    elif rule_type == "X":
+        result_dict[form_data["target_column"]] = {
+            "type": "X",
+            "rule": {
+                "source_column": form_data["source_column"],
+                "instruction": form_data.get('mapping', '')
+            },
+            "target_column": form_data["target_column"]
+        }
+
+    else:
+        print(f"Unknown transformation type: {rule_type}")
+        return
 
     print(result_dict)
-    print('\n calling go to func')
+    print('\n calling go_to_func')
     go_to_func(result_dict)
 
 
@@ -98,7 +150,6 @@ def transform_row_with_ai(input_row, transformation_dict):
 
             RULE TYPES:
             - 'T' (Transform): Replace values using mapping dictionary.
-            - 'D' (Default): Replace column value with the default value given.
             - 'O' (One-to-One): Copy the source column's value as-is into the target column.
             - 'X' (Custom rule): Follow the custom instruction exactly
 
