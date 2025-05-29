@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Page</title>
+</head>
+<body>
+    <form action="/processing" method="post">
+        <label for="Rule">Transformation Rule selector:</label><br>
+        <select id="Rule" , name="type">
+            <option value="O">O</option>
+        </select><br><br>
+        <label for="Input_columns">Source Columns:</label><br>
+        <select id="Input_columns" name="source_column">
+        {% for item in source_cls %}
+            <option value="{{ item }}"> {{item}} </option>
+        {% endfor %}
+        </select>
+        <br><br>
+        <label for="target Column1">Target Column name:</label><br>
+        <input type="target Column" id="target column" name="target_column">
+        <br><br>
+        <input type="submit" value="Submit">
+        
+    </form>
+</body>
+</html>
