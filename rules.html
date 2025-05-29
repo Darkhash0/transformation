@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Configure Rules</title>
+</head>
+<body>
+    <h1>🔧 Configure Transformation Rules</h1>
+
+    <form action="/transform" method="post">
+        <input type="hidden" name="session_id" value="{{ session_id }}">
+
+        <h2>Rule 1</h2>
+        <label>Rule Type:</label>
+        <select name="rule_type_0" required>
+            <option value="T">T (Translate)</option>
+            <option value="D">D (Default)</option>
+            <option value="C">C (Concatenate)</option>
+            <option value="R">R (Rename)</option>
+            <option value="X">X (Custom)</option>
+        </select><br><br>
+
+        <label>Target Column Name:</label>
+        <input type="text" name="target_column_0" required><br><br>
+
+        <label>Source Column(s) (comma separated if multiple):</label>
+        <input type="text" name="source_column_0"><br><br>
+
+        <label>Extra Config (e.g., mapping, separator, instruction):</label><br>
+        <textarea name="extra_0" rows="4" cols="50" placeholder="key1=value1\nkey2=value2"></textarea><br><br>
+
+        <!-- Add more rules here if you implement dynamic rule support -->
+
+        <button type="submit">🚀 Transform Data</button>
+    </form>
+</body>
+</html>
