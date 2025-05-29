@@ -55,33 +55,33 @@ class AITransformer:
         
         # Create the prompt
         prompt = f"""
-You are a data transformation expert. Apply the following transformation rules to the input data row.
+            You are a data transformation expert. Apply the following transformation rules to the input data row.
 
-RULE TYPES:
-- T (Translate): Transform values based on mapping (e.g., "Male" -> "M", "Female" -> "F")
-- D (Default): Replace null/empty values with a default value
-- C (Concatenate): Join multiple fields with a separator
-- R (Rename): Copy column as-is but with a new name
-- X (Custom): Apply custom logic as described
+            RULE TYPES:
+            - T (Translate): Transform values based on mapping (e.g., "Male" -> "M", "Female" -> "F")
+            - D (Default): Replace the source value with the default value
+            - C (Concatenate): Join multiple fields with a separator
+            - R (Rename): Copy column as-is but with a new name
+            - X (Custom): Apply custom logic as described
 
-TRANSFORMATION RULES:
-{json.dumps(rules, indent=2)}
+            TRANSFORMATION RULES:
+            {json.dumps(rules, indent=2)}
 
-INPUT ROW:
-{json.dumps(row_data, indent=2)}
+            INPUT ROW:
+            {json.dumps(row_data, indent=2)}
 
-INSTRUCTIONS:
-1. Apply each rule to create the target columns
-2. For T rules: Use the mapping provided
-3. For D rules: Replace null/empty/NaN values with the default
-4. For C rules: Join the specified columns with the separator
-5. For R rules: Copy the value to new column name
-6. For X rules: Follow the custom instruction exactly
-7. Return ONLY the transformed target columns as JSON
-8. Do not include original columns unless they are target columns
+            INSTRUCTIONS:
+            1. Apply each rule to create the target columns
+            2. For T rules: Use the mapping provided
+            3. For D rules: Replace the source value with the default value
+            4. For C rules: Join the specified columns with the separator
+            5. For R rules: Copy the value to new column name
+            6. For X rules: Follow the custom instruction exactly
+            7. Return ONLY the transformed target columns as JSON
+            8. Do not include original columns unless they are target columns
 
-OUTPUT (JSON only):
-"""
+            OUTPUT (JSON only):
+            """
 
         try:
             if self.config_type == "azure":
@@ -308,8 +308,10 @@ def main():
         # Read and display the CSV
         df = pd.read_csv(uploaded_file)
         
-        st.subheader("📊 Input Data Preview")
-        st.dataframe(df.head(10))
+        st.subheader("Source Columns Preview")
+        # st.dataframe(df.head(10))
+        # st.dataframe(df.columns)
+        st.dataframe(pd.DataFrame([df.columns], index=["Columns"]))
         st.info(f"Dataset contains {len(df)} rows and {len(df.columns)} columns")
         
         # Rule configuration
