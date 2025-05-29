@@ -55,33 +55,33 @@ class AITransformer:
         
         # Create the prompt
         prompt = f"""
-            You are a data transformation expert. Apply the following transformation rules to the input data row.
+You are a data transformation expert. Apply the following transformation rules to the input data row.
 
-            RULE TYPES:
-            - T (Translate): Transform values based on mapping (e.g., "Male" -> "M", "Female" -> "F")
-            - D (Default): Replace null/empty values with a default value
-            - C (Concatenate): Join multiple fields with a separator
-            - R (Rename): Copy column as-is but with a new name
-            - X (Custom): Apply custom logic as described
+RULE TYPES:
+- T (Translate): Transform values based on mapping (e.g., "Male" -> "M", "Female" -> "F")
+- D (Default): Replace null/empty values with a default value
+- C (Concatenate): Join multiple fields with a separator
+- R (Rename): Copy column as-is but with a new name
+- X (Custom): Apply custom logic as described
 
-            TRANSFORMATION RULES:
-            {json.dumps(rules, indent=2)}
+TRANSFORMATION RULES:
+{json.dumps(rules, indent=2)}
 
-            INPUT ROW:
-            {json.dumps(row_data, indent=2)}
+INPUT ROW:
+{json.dumps(row_data, indent=2)}
 
-            INSTRUCTIONS:
-            1. Apply each rule to create the target columns
-            2. For T rules: Use the mapping provided
-            3. For D rules: Replace null/empty/NaN values with the default
-            4. For C rules: Join the specified columns with the separator
-            5. For R rules: Copy the value to new column name
-            6. For X rules: Follow the custom instruction exactly
-            7. Return ONLY the transformed target columns as JSON
-            8. Do not include original columns unless they are target columns
+INSTRUCTIONS:
+1. Apply each rule to create the target columns
+2. For T rules: Use the mapping provided
+3. For D rules: Replace null/empty/NaN values with the default
+4. For C rules: Join the specified columns with the separator
+5. For R rules: Copy the value to new column name
+6. For X rules: Follow the custom instruction exactly
+7. Return ONLY the transformed target columns as JSON
+8. Do not include original columns unless they are target columns
 
-            OUTPUT (JSON only):
-            """
+OUTPUT (JSON only):
+"""
 
         try:
             if self.config_type == "azure":
@@ -349,103 +349,48 @@ def main():
             progress_bar = st.progress(0)
             status_text = st.empty()
             
-            # Start with the original dataframe and add transformed columns
-            # output_df = df.copy()
-            output_df = pd.DataFrame(columns=list(rules.keys()))
+            transformed_rows = []
             total_rows = len(df)
             
-
-            # Store transformed rows
-            transformed_rows = []
-
             # Transform each row
             for idx, (_, row) in enumerate(df.iterrows()):
                 status_text.text(f"Transforming row {idx + 1} of {total_rows}")
                 progress_bar.progress((idx + 1) / total_rows)
-
+                
+                # Convert row to dict and handle NaN values
                 row_dict = row.to_dict()
                 row_dict = {k: (v if pd.notna(v) else None) for k, v in row_dict.items()}
-
+                
+                # Transform the row
                 transformed_row = transformer.transform_row(row_dict, rules)
                 transformed_rows.append(transformed_row)
-
+                
+                # Small delay to avoid rate limits
                 time.sleep(0.1)
-
-                # Create a new DataFrame with only transformed columns
+            
+            # Create output dataframe
+            if transformed_rows and any(transformed_rows):
                 output_df = pd.DataFrame(transformed_rows)
-
-
-            # # Transform each row
-            # for idx, (_, row) in enumerate(df.iterrows()):
-            #     status_text.text(f"Transforming row {idx + 1} of {total_rows}")
-            #     progress_bar.progress((idx + 1) / total_rows)
                 
-            #     # Convert row to dict and handle NaN values
-            #     row_dict = row.to_dict()
-            #     row_dict = {k: (v if pd.notna(v) else None) for k, v in row_dict.items()}
+                st.subheader("✅ Transformation Complete!")
+                st.dataframe(output_df)
                 
-            #     # Transform the row
-            #     transformed_row = transformer.transform_row(row_dict, rules)
+                # Download button
+                csv_buffer = io.StringIO()
+                output_df.to_csv(csv_buffer, index=False)
+                csv_data = csv_buffer.getvalue()
                 
-            #     # Add transformed columns to the output dataframe
-            #     # for col_name, col_value in transformed_row.items():
-            #     #     output_df.at[idx, col_name] = col_value
-
-            #     output_df.loc[idx] = [transformed_row.get(col,None) for col in output_df.columns]
+                st.download_button(
+                    label="📥 Download Transformed CSV",
+                    data=csv_data,
+                    file_name="transformed_data.csv",
+                    mime="text/csv"
+                )
                 
-            #     # Small delay to avoid rate limits
-            #     time.sleep(0.1)
-            
-            # Reorder columns to maintain original order first, then add new columns
-            original_columns = list(df.columns)
-            new_columns = [col for col in output_df.columns if col not in original_columns]
-            final_column_order = original_columns + new_columns
-            output_df = output_df[final_column_order]
-            
-            st.subheader("✅ Transformation Complete!")
-            st.dataframe(output_df)
-            
-            # Download button
-            csv_buffer = io.StringIO()
-            output_df.to_csv(csv_buffer, index=False)
-            csv_data = csv_buffer.getvalue()
-            
-            st.download_button(
-                label="📥 Download Transformed CSV",
-                data=csv_data,
-                file_name="transformed_data.csv",
-                mime="text/csv"
-            )
-            
-            # Show summary
-            st.info(f"Successfully transformed {len(output_df)} rows. Original columns: {len(original_columns)}, New columns: {len(new_columns)}, Total columns: {len(output_df.columns)}")
+                # Show summary
+                st.info(f"Successfully transformed {len(output_df)} rows with {len(output_df.columns)} target columns")
+            else:
+                st.error("Transformation failed. Please check your rules and try again.")
 
 if __name__ == "__main__":
     main()
-
-
-'''
-INPUT:
-name,gender
-sam,M
-adam,M
-sarah,F
-jack,M
-
-
-WRONG OUTPUT:
-name,gender,gender_of_people,Fname
-sam,M,1,sam
-adam,M,1,adam
-sarah,F,2,sarah
-jack,M,1,jack
-
-
-CORRECT AND EXPECTED OUTPUT:
-Fname,gender_of_people
-sam,1
-adam,1
-sarah,2
-jack,1
-
-'''

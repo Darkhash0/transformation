@@ -4,8 +4,8 @@ import pandas as pd
 from langchain_openai import AzureChatOpenAI
 import gradio as gr
 
-os.environ["AZURE_OPENAI_API_KEY"] = "XXX"
-os.environ["AZURE_OPENAI_ENDPOINT"] = "XXX"
+os.environ["AZURE_OPENAI_API_KEY"] = "70683718b85747ea89724db4214873e7"
+os.environ["AZURE_OPENAI_ENDPOINT"] = "https://codedocumentation.openai.azure.com/"
 os.environ["AZURE_OPENAI_API_VERSION"] = "2024-02-15-preview"
 os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"] = "gpt-4o"
 
@@ -22,7 +22,7 @@ def load_input_data(input_file_path):
 
 
 def load_transformation_rules(rules_file_path):
-    df = pd.read_excel(rules_file_path, engine='openpyxl', sheet_name='Mapping')
+    df = pd.read_excel(rules_file_path, engine='openpyxl', sheet_name='sample')
     transformation_dict = {} # parsing the rules in to the dictionary, Main structure for ai to understand
     # source_to_target_col_map = {}
 

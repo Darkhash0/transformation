@@ -72,40 +72,40 @@ def transform_row_with_ai(input_row_dict_sanitized, transformation_rules_dict):
         return {}
 
     prompt = f"""
-You are a data transformation engine. Your task is to process an INPUT ROW based on TRANSFORMATION RULES and return a complete JSON dictionary.
+        You are a data transformation engine. Your task is to process an INPUT ROW based on TRANSFORMATION RULES and return a complete JSON dictionary.
 
-TRANSFORMATION RULES:
-{json.dumps(transformation_rules_dict, indent=2)}
+        TRANSFORMATION RULES:
+        {json.dumps(transformation_rules_dict, indent=2)}
 
-RULE TYPES:
-- 'T' (Transform): Uses a mapping to change values from a `source_column` to a `target_column`.
-- 'D' (Default): Sets a `target_column` to a default value. The `source_column` might be specified for context but its value isn't directly used for mapping.
-- 'O' (One-to-One): Copies the value from a `source_column` to a `target_column`.
+        RULE TYPES:
+        - 'T' (Transform): Uses a mapping to change values from a `source_column` to a `target_column`.
+        - 'D' (Default): Sets a `target_column` to a default value. The `source_column` might be specified for context but its value isn't directly used for mapping.
+        - 'O' (One-to-One): Copies the value from a `source_column` to a `target_column`.
 
-INSTRUCTIONS:
-1.  **Preserve all original columns and their values from the `INPUT ROW` by default.** Start your processing with a copy of the `INPUT ROW`.
-2.  For each rule in `TRANSFORMATION RULES`:
-    a.  Identify the `source_column` (if applicable for the rule type) and the `target_column`.
-    b.  Apply the rule to determine the value for the `target_column`.
-        - For 'T' rule: If the `source_column`'s value is not in the mapping, or if the `source_column` itself is missing from `INPUT ROW` or its value is null, the `target_column`'s value should be an empty string `""`.
-        - For 'O' rule: If `source_column` is missing from `INPUT ROW` or its value is null, the `target_column`'s value should be an empty string `""`.
-        - For 'D' rule: Use the provided default value.
-    c.  Update your working copy of the row:
-        i.  Set the `target_column` to the new value. This might overwrite an existing column if `target_column` has the same name as an original column, or it will add a new column if the name is different.
-        ii. **If a `source_column` was specified in the rule, existed in the `INPUT ROW`, and its name is DIFFERENT from the `target_column` name, then REMOVE the original `source_column` from the row.** This ensures the source data is replaced by its transformed version under the new name and avoids data duplication.
-3.  The final output must be a single JSON dictionary representing the fully transformed row. This dictionary should include all original columns that were not explicitly removed as per instruction 2.c.ii, plus any new target columns.
-4.  Return only the valid JSON dictionary as your response.
+        INSTRUCTIONS:
+        1.  **Preserve all original columns and their values from the `INPUT ROW` by default.** Start your processing with a copy of the `INPUT ROW`.
+        2.  For each rule in `TRANSFORMATION RULES`:
+            a.  Identify the `source_column` (if applicable for the rule type) and the `target_column`.
+            b.  Apply the rule to determine the value for the `target_column`.
+                - For 'T' rule: If the `source_column`'s value is not in the mapping, or if the `source_column` itself is missing from `INPUT ROW` or its value is null, the `target_column`'s value should be an empty string `""`.
+                - For 'O' rule: If `source_column` is missing from `INPUT ROW` or its value is null, the `target_column`'s value should be an empty string `""`.
+                - For 'D' rule: Use the provided default value.
+            c.  Update your working copy of the row:
+                i.  Set the `target_column` to the new value. This might overwrite an existing column if `target_column` has the same name as an original column, or it will add a new column if the name is different.
+                ii. **If a `source_column` was specified in the rule, existed in the `INPUT ROW`, and its name is DIFFERENT from the `target_column` name, then REMOVE the original `source_column` from the row.** This ensures the source data is replaced by its transformed version under the new name and avoids data duplication.
+        3.  The final output must be a single JSON dictionary representing the fully transformed row. This dictionary should include all original columns that were not explicitly removed as per instruction 2.c.ii, plus any new target columns.
+        4.  Return only the valid JSON dictionary as your response.
 
-INPUT ROW (provided as a JSON object, where 'null' represents missing/NaN values):
-{json.dumps(input_row_dict_sanitized, indent=2)}
+        INPUT ROW (provided as a JSON object, where 'null' represents missing/NaN values):
+        {json.dumps(input_row_dict_sanitized, indent=2)}
 
-Example for 'T' type if INPUT ROW is {{"id": 10, "gender_code": "M", "age": 30}} and TRANSFORMATION RULES are {{ "gender_full": {{ "type": "T", "rule_payload": {{ "source_column": "gender_code", "mapping": {{"M": "Male", "F": "Female"}} }}, "target_column": "gender_full" }} }}:
-The expected output JSON would be: {{"id": 10, "age": 30, "gender_full": "Male"}} (Original "gender_code" is removed as it's different from "gender_full" and was processed).
+        Example for 'T' type if INPUT ROW is {{"id": 10, "gender_code": "M", "age": 30}} and TRANSFORMATION RULES are {{ "gender_full": {{ "type": "T", "rule_payload": {{ "source_column": "gender_code", "mapping": {{"M": "Male", "F": "Female"}} }}, "target_column": "gender_full" }} }}:
+        The expected output JSON would be: {{"id": 10, "age": 30, "gender_full": "Male"}} (Original "gender_code" is removed as it's different from "gender_full" and was processed).
 
-Example for 'O' type if INPUT ROW is {{"A": 1, "B": 2, "C": 3}} and TRANSFORMATION RULES are {{ "new_B": {{ "type": "O", "rule_payload": {{ "source_column": "B" }}, "target_column": "new_B" }} }}:
-The expected output JSON would be: {{"A": 1, "C": 3, "new_B": 2}} (Original "B" is removed).
+        Example for 'O' type if INPUT ROW is {{"A": 1, "B": 2, "C": 3}} and TRANSFORMATION RULES are {{ "new_B": {{ "type": "O", "rule_payload": {{ "source_column": "B" }}, "target_column": "new_B" }} }}:
+        The expected output JSON would be: {{"A": 1, "C": 3, "new_B": 2}} (Original "B" is removed).
 
-Return only the transformed row as a valid JSON dictionary.
+        Return only the transformed row as a valid JSON dictionary.
     """
 
     try:

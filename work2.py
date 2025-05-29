@@ -6,9 +6,9 @@ import pandas as pd
 from langchain_openai import AzureChatOpenAI
 import gradio as gr
 
-os.environ["AZURE_OPENAI_API_KEY"] = "xxxxx"
-os.environ["AZURE_OPENAI_ENDPOINT"] = "xx"
-os.environ["AZURE_OPENAI_API_VERSION"] = "xxx"
+os.environ["AZURE_OPENAI_API_KEY"] = "70683718b85747ea89724db4214873e7"
+os.environ["AZURE_OPENAI_ENDPOINT"] = "https://codedocumentation.openai.azure.com/"
+os.environ["AZURE_OPENAI_API_VERSION"] = "2024-02-15-preview"
 os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"] = "gpt-4o"
 
 
@@ -24,7 +24,7 @@ app = Flask(__name__)
 def transform_to_df(file):
     return pd.read_csv(file)
 
-csv_df = transform_to_df('NAM 4.csv')
+csv_df = transform_to_df('sampledata.csv')
 
 def transformation_dict(form_data):
     for key,value in form_data.items():
@@ -33,29 +33,42 @@ def transformation_dict(form_data):
 
 def display_data(form_data):
     print('displaying display data function')
-    result_dict = {}
+    result_list = []
     
 
     # Convert mapping string to dictionary
-    mapping_str = form_data['mapping']
+    mapping_str = form_data['mapping2']
     mapping_dict = {}
     for line in mapping_str.splitlines():
         if '=' in line:
             key, value = line.split('=')
             mapping_dict[key.strip()] = value.strip()
+    
+    if form_data["type1"] == 'O':
+       result_list.append({
+            "type": form_data["type1"],
+            "type_payload": {
+                "source_column": form_data["source_column1"]
+            },
+            "target_column": form_data["target_column1"]
+        })
 
-    result_dict[form_data["target_column"]] = {
-        "type": "T",
-        "rule_payload": {
-            "source_column": form_data["source_column"],
-            "mapping": mapping_dict
-        },
-        "target_column": form_data["target_column"]
-    }
+    if form_data["type2"] == 'T':
+        result_list.append( {
+            "type": form_data["type2"],
+            "type_payload": {
+                "source_column": form_data["source_column2"],
+                "mapping": mapping_dict
+            },
+        "target_column": form_data["target_column2"]
+        })
 
-    print(result_dict)
+    
+    
+
+    print(result_list)
     print('\n calling go to func')
-    go_to_func(result_dict)
+    go_to_func(result_list)
 
 
 def transform_row_with_ai(input_row, transformation_dict):
@@ -65,14 +78,14 @@ def transform_row_with_ai(input_row, transformation_dict):
     prompt = f"""
             You are a data transformation engine.
 
-            Your job is to transform the given input row using the provided structured transformation rules.
+            Your job is to transform the given input row using the provided structured transformation types.
 
             ----------------------
-            TRANSFORMATION RULES:
+            TRANSFORMATION typeS:
             {json.dumps(transformation_dict, indent=2)}
             ----------------------
 
-            RULE TYPES:
+            type TYPES:
             - 'T' (Transform): Replace values using mapping dictionary.
             - 'D' (Default): Replace column value with the default value given.
             - 'O' (One-to-One): Copy the source column's value as-is into the target column.
@@ -106,7 +119,7 @@ def transform_row_with_ai(input_row, transformation_dict):
 
 
 def go_to_func(transformation_dict):
-    input_df = transform_to_df('NAM 4.csv')
+    input_df = transform_to_df('sampledata.csv')
 
 
     result_rows = []
@@ -115,9 +128,16 @@ def go_to_func(transformation_dict):
         input_row = row.to_dict()
         transformed_row = transform_row_with_ai(input_row, transformation_dict)
         print(f"\nAI input:\n{json.dumps(input_row,indent=2)}\nAI output:\n{transformed_row}")
-        result_rows.append(transformed_row)
+        merged_row = {**input_row, **transformed_row}
+        result_rows.append(merged_row)
+        
 
+    
+    
     output_df = pd.DataFrame(result_rows)
+
+    final_columns = list(input_df.columns) + [col for col in output_df.columns if col not in input_df.columns]
+    output_df = output_df[final_columns]
 
     output_folder = "Output"
     os.makedirs(output_folder, exist_ok=True)
@@ -151,7 +171,7 @@ if __name__ == "__main__":
     Your current implementation only returns the transformed column(s) (e.g., people_gender) from the AI, and drops all the original columns from the final output.
     displaying display data function
 
-{'people_gender': {'type': 'T', 'rule_payload': {'source_column': 'Gender', 'mapping': {'M': '1', 'F': '2'}}, 'target_column': 'people_gender'}}
+{'people_gender': {'type': 'T', 'type_payload': {'source_column': 'Gender', 'mapping': {'M': '1', 'F': '2'}}, 'target_column': 'people_gender'}}
 
 WRONG OUTPUT:
 
