@@ -232,3 +232,57 @@ if __name__ == "__main__":
     if not os.path.exists('templates/form.html'):
          print("Error: 'templates/form.html' not found. Please create it.")
     app.run(debug=True)
+
+"""
+def process_data(form_data):
+    print('displaying process_data function')
+    result_dict = {}
+
+    rule_type = form_data.get("type")
+
+    if rule_type == "T":
+        # Mapping string to dictionary
+        mapping_str = form_data.get("mapping", "")
+        mapping_dict = {}
+        for line in mapping_str.splitlines():
+            if '=' in line:
+                key, value = line.split('=')
+                mapping_dict[key.strip()] = value.strip()
+
+        result_dict[form_data["target_column"]] = {
+            "type": "T",
+            "rule": {
+                "source_column": form_data["source_column"],
+                "mapping": mapping_dict
+            },
+            "target_column": form_data["target_column"]
+        }
+
+    elif rule_type == "O":
+        result_dict[form_data["target_column"]] = {
+            "type": "O",
+            "rule": {
+                "source_column": form_data["source_column"]
+            },
+            "target_column": form_data["target_column"]
+        }
+
+    elif rule_type == "X":
+        result_dict[form_data["target_column"]] = {
+            "type": "X",
+            "rule": {
+                "source_column": form_data["source_column"],
+                "instruction": form_data.get('mapping', '')
+            },
+            "target_column": form_data["target_column"]
+        }
+
+    else:
+        print(f"Unknown transformation type: {rule_type}")
+        return
+
+    print(result_dict)
+    print('\n calling go_to_func')
+    go_to_func(result_dict)
+
+"""
