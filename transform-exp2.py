@@ -4,10 +4,10 @@ import pandas as pd
 from langchain_openai import AzureChatOpenAI
 import gradio as gr
 
-os.environ["AZURE_OPENAI_API_KEY"] = "xxxxx" # Replace with your actual key
-os.environ["AZURE_OPENAI_ENDPOINT"] = "xx" # Replace with your actual endpoint
-os.environ["AZURE_OPENAI_API_VERSION"] = "xxx" # Replace with your actual version
-os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"] = "gpt-4o" # Replace with your deployment name
+os.environ["AZURE_OPENAI_API_KEY"] = "xxx"
+os.environ["AZURE_OPENAI_ENDPOINT"] = "https://codedocumentation.openai.azure.com/"
+os.environ["AZURE_OPENAI_API_VERSION"] = "2024-02-15-preview"
+os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"] = "gpt-4o"
 
 
 model = AzureChatOpenAI(
@@ -43,7 +43,6 @@ def load_transformation_rules(rules_file_path):
         rule_type = row.get('Transformation Type', None)
         target_col = row.get('STG_Column_Name', None)
 
-        # Extract substring after colon if present
         if isinstance(source_col_raw, str) and ':' in source_col_raw:
             source_col = source_col_raw.split(':', 1)[1]
         else:
@@ -74,20 +73,23 @@ def load_transformation_rules(rules_file_path):
                 "mapping":transformation_dict
             }
             mapping_instructions.append(instruction)
-
+        
         elif rule_type == 'A':
-            instruction = {
-                "type":"A",
-                "source_column":source_col,
-                "target_column":target_col,
-                "auto-generated-value": f"Generate a random alphanumeric string with a maximum length of 8 characters. The first 4 characters should be extracted from the value in the {source_col} column. The remaining characters should be randomly generated to complete the string. Assign the final string to the {target_col} column."
+            return {
+                "type": "A",
+                "source_column": source_col,
+                "target_column": target_col,
+                "auto_generate_rule": f"Generate a unique ID using the current timestamp in the format YYYY-DD-MM-HH-MM-SS-ms. Return the generated ID(s) as a string. And assign this value(s) to the {target_col} column.",
             }
-            mapping_instructions.append(instruction)
+
+        
+        else:
+            print(f'\nUnknown rule type:{rule_type}')
     
     print(f"\nMapping Instructions:{mapping_instructions}")
     print(f"\ntransformation dictionary:{transformation_dict}")
 
-    return mapping_instructions,transformation_dict
+    return mapping_instructions
 
 
 def transform_row_with_ai(input_row, mapping_instructions):
@@ -95,35 +97,35 @@ def transform_row_with_ai(input_row, mapping_instructions):
         return {}
 
     prompt = f"""
-            You are a data transformation engine.
+You are a data transformation expert.
 
-            Your job is to transform the given input row using the provided structured transformation rules.
+Your job is to transform the given input row using the provided structured transformation rules.
 
-            ----------------------
-            TRANSFORMATION RULES:
-            {json.dumps(mapping_instructions, indent=2)}
-            ----------------------
+----------------------
+TRANSFORMATION RULES:
+{json.dumps(mapping_instructions, indent=2)}
+----------------------
 
-            RULE TYPES:
-            - 'T' (Transform): Replace values using mapping dictionary. Find the column name and replace the value(s) properly.
-            - 'D' (Default): Replace source column value with the default value given.
-            - 'O' (One-to-One): Copy the source column's value as-is into the target column.
-            - 'A' (Auto-Generate): Auto generate the random characters as specified (e.g., 0019AZ00 -> first four characters are from 'ClientId' column and the rest characters are random alphanumeric characters generated.)
+RULE TYPES:
+- 'T' (Transform): Replace values using mapping dictionary. Find the column name and replace the value(s) properly.
+- 'D' (Default): Replace source column value with the default value given.
+- 'O' (One-to-One): Copy the source column's value as-is into the target column.
+- 'A' (Auto-Generate): Generate the unique ID(s).
 
-            INSTRUCTIONS:
-            1. Apply the transfomations exactly as instructed.
-            2. Replace the original column(s) with the tranformed column(s).
-            3. Do not retain the original column if it has been tranformed.
-            4. Use the new column name specified for the transformation.
-            5. If value is missing or not found in a mapping, leave the value as blank "".
+IMPORTANT INSTRUCTIONS:
+1. Apply transformations exactly as instructed.
+2. Replace the original column(s) with the tranformed column(s).
+3. Do not retain the original column if it has been tranformed.
+4. Use the new column name specified for the transformation.
+5. If a value is not found in the mapping or the source is empty, use an empty string "".
+6. Maintain the tranformed column order in the final output.
 
-            INPUT ROW:
-            {json.dumps(input_row, indent=2)}
+INPUT ROW:
+{json.dumps(input_row, indent=2)}
 
-            Return only the transformed row as a valid JSON dictionary with final target column names.
-        
-        
-        """
+Return all the transformed row(s) as a valid JSON object.
+
+"""
 
     response = model.invoke(prompt)
     content = response.content.strip()
@@ -143,7 +145,7 @@ def transform_row_with_ai(input_row, mapping_instructions):
 
 def transform_excel(input_csv, mapping_excel):
     input_df = load_input_data(input_csv)
-    mapping_instructions ,transformation_dict = load_transformation_rules(mapping_excel)
+    mapping_instructions  = load_transformation_rules(mapping_excel)
 
     result_rows = []
 
@@ -164,38 +166,240 @@ def transform_excel(input_csv, mapping_excel):
     print(f"\nTransformation complete. Output saved to: {output_file}")
 
 
-transform_excel('CIFINPUT/NF_CLIENT_24042025.csv', "CIFINPUT/TRANS_ADRPART01.xlsx")
+transform_excel('CIFINPUT/NF_CLIENT_24042025.csv', "CIFINPUT/TRANS_NAM 4.xlsx")
+#TRANS_ADRPART01
+#TRANS_NAM 4
+#TRANS_ADRPART02
+
+
+
 
 
 '''
-TRANS_ADRPART01.xlsx data:
+excel file:
+->Transform sheet data:
+Parameter#1                             
+NAM
+NF_NAM:ClientID
+NF_NAM:PersonInd
+NF_NAM:TaxId
+NF_NAM:EffectiveDate
+NF_NAM:LastName
+NF_NAM:FirstName
+NF_NAM:MiddleName
+NF_NAM:NameSalutation
+NF_NAM:NameSuffix
+NAM
+NF_NAM:Citizenship
+NF_NAM:Gender
+NF_NAM:DateOfBirth
+NF_NAM:CompanyName
+NF_NAM:CompanyType
+NF_NAM:IndividualContactID
+NAM
+NAM
+NAM
+NAM
+NAM
+NAM
+NAM
+NAM
+NAM
+NAM
+NF_NAM:DateOfDeath
+StateCodeCIF
 
-Parameter#1
-ADR
-NF_ADRPART01:ClientId
-AddressID
-M
-NF_ADRPART01:MailingEffectiveDate
-NF_ADRPART01:MailingAddrline1
-NF_ADRPART01:MailingAddrline2
-NF_ADRPART01:MailingAddrline3
-CTS
-NF_ADRPART01:MailingCity
-NF_ADRPART01:MailingStateCode
-NF_ADRPART01:MailingZipcode
-NF_ADRPART01:MailingCountryCode
-NF_ADRPART01:MailingForeignAddrInd
-NF_ADRPART01:ReturnedAddressIndicator
+----------------------
+
+Transformation Type
+D
+O
+T
+O
+O
+O
+O
+O
+O
+O
+D
+O
+T
+O
+O
+O
+O
+D
+D
+D
+D
+D
+D
+D
+D
+D
+D
+O
+T
+----------------
+STG_Column_Name
+Type
+UniqueID
+PersonInd
+TaxId
+EffectiveDate
+Lastname
+Firstname
+Middlename
+NameSalutation
+Namesuffix
+BusinessDesig
+Citizenship
+Gender
+DateofBirth
+CompanyName
+CompanyType
+IndividualContactID
+OriginMemClientID
+EmployeeInd
+DNCInd
+AgeAdmitted
+ShareInformation
+Marketing
+VerbalPassword
+VerbalPasswordReason
+SpecialProcessingIndicator
+SpecialProcessingReason
+Dateofdeath
+StateCode
+------------------
+
+The Correct ouput is correct because I removed the transformation rule A which describes as follows:
+"Generate a unique ID using the current timestamp in the format YYYY-DD-MM-HH-MM-SS-ms. Return the generated ID(s) as a string. And assign this value(s) to the {target_col} column."
 
 
-NF_CLIENT_24042025.csv data:
+Correct ouput:
+AI input:
+{
+  "personind": "P",
+  "taxid": NaN,
+  "effectivedate": "11-NOV-2013",
+  "lastname": "AZTEFF",
+  "firstname": "AMAY",
+  "middlename": "AKNINE",
+  "namesalutation": NaN,
+  "namesuffix": NaN,
+  "citizenship": NaN,
+  "gender": NaN,
+  "dateofbirth": "06-FEB-1979",
+  "companyname": NaN,
+  "individualcontactid": NaN,
+  "dateofdeath": NaN,
+  "mailingeffectivedate": NaN,
+  "mailingaddrline1": NaN,
+  "mailingaddrline2": NaN,
+  "mailingaddrline3": NaN,
+  "mailingcity": NaN,
+  "mailingstatecode": NaN,
+  "mailingzipcode": NaN,
+  "mailingcountrycode": NaN,
+  "mailingforeignaddrind": NaN,
+  "residenceeffectivedate": NaN,
+  "residenceaddrline1": NaN,
+  "residenceaddrline2": NaN,
+  "residenceaddrline3": NaN,
+  "residencecity": NaN,
+  "residencestatecode": NaN,
+  "residencezipcode": NaN,
+  "residencecountrycode": NaN,
+  "residenceforeignaddrind": NaN,
+  "returnedaddressindicator": NaN,
+  "preferredphonetype": NaN,
+  "preferredeffectivedate": NaN,
+  "preferredphonenumber": NaN,
+  "additionalphonetype": NaN,
+  "additionaleffectivedate": NaN,
+  "additionalphonenumber": NaN,
+  "webeffectivedate": NaN,
+  "webtype": NaN,
+  "webaddress": NaN,
+  "policynumber": 213230955,
+  "policysuffix": "MT",
+  "relationcode": 7,
+  "distpct": 100.0,
+  "relattoinsured": "Spouse",
+  "relatcontuniqid": NaN,
+  "partyalert": NaN,
+  "contractalert": NaN,
+  "clientid": 1000000023,
+  "companytype": "AA",
+  "statecodecif": NaN
+}
+AI output:
+{'Type': 'NAM', 'UniqueID': 1000000023, 'PersonInd': 'Y', 'TaxId': '', 'EffectiveDate': '11-NOV-2013', 'Lastname': 'AZTEFF', 'Firstname': 'AMAY', 'Middlename': 'AKNINE', 'NameSalutation': '', 'Namesuffix': '', 'BusinessDesig': None, 'Citizenship': '', 'Gender': '', 'DateofBirth': '06-FEB-1979', 'CompanyName': '', 'CompanyType': 'AA', 'IndividualContactID': '', 'OriginMemClientID': None, 'EmployeeInd': None, 'DNCInd': None, 'AgeAdmitted': None, 'ShareInformation': None, 'Marketing': None, 'VerbalPassword': None, 'VerbalPasswordReason': None, 'SpecialProcessingIndicator': None, 'SpecialProcessingReason': None, 'Dateofdeath': '', 'StateCode': ''}
 
-PERSONIND| TAXID    | EFFECTIVEDATE| LASTNAME| FIRSTNAME| MIDDLENAME| NAMESALUTATION| NAMESUFFIX| CITIZENSHIP| GENDER| DATEOFBIRTH| COMPANYNAME| INDIVIDUALCONTACTID| DATEOFDEATH| MAILINGEFFECTIVEDATE| MAILINGADDRLINE1| MAILINGADDRLINE2| MAILINGADDRLINE3| MAILINGCITY| MAILINGSTATECODE| MAILINGZIPCODE| MAILINGCOUNTRYCODE| MAILINGFOREIGNADDRIND| RESIDENCEEFFECTIVEDATE| RESIDENCEADDRLINE1| RESIDENCEADDRLINE2| RESIDENCEADDRLINE3| RESIDENCECITY| RESIDENCESTATECODE| RESIDENCEZIPCODE| RESIDENCECOUNTRYCODE| RESIDENCEFOREIGNADDRIND| RETURNEDADDRESSINDICATOR| PREFERREDPHONETYPE| PREFERREDEFFECTIVEDATE| PREFERREDPHONENUMBER| ADDITIONALPHONETYPE| ADDITIONALEFFECTIVEDATE| ADDITIONALPHONENUMBER| WEBEFFECTIVEDATE| WEBTYPE| WEBADDRESS         | POLICYNUMBER| POLICYSUFFIX| RELATIONCODE| DISTPCT| RELATTOINSURED| RELATCONTUNIQID| PARTYALERT| CONTRACTALERT| CLIENTID  | COMPANYTYPE| StateCodeCIF
 
-O        |          | 05-DEC-2013  |         |          |           |               |           |            |       |            | UNKNOWN    | PETTY              |            |                     |                 |                 |                 |            |                 |               |                   |                      |                       |                   |                   |                   |              |                   |                 |                     |                        |                         |                   |                       |                     |                    |                        |                      |                 |        |                    |    213234642| MT          |            9|     0.0|               |                |           |              | 1000000017| AA         |           61
-O        |          | 09-NOV-2017  |         |          |           |               |           |            |       |            | ESTATE     | WILSON             |            |                     |                 |                 |                 |            |                 |               |                   |                      |                       |                   |                   |                   |              |                   |                 |                     |                        |                         |                   |                       |                     |                    |                        |                      |                 |        |                    |    213230370| MT          |            9|   100.0|               |                |           |    1145763835| 1000000018| AA         |           14
-P        |  90808069| 07-NOV-2013  | SURAJ   | KHAN     | N         |               |           |           1| F     | 07-FEB-1970|            |                    |            | 07-NOV-2013         | 1030 MISSISSIP  |                 |                 | URUWU      |               37|      557591312|                  1| N                    | 07-NOV-2013           | 1030 MISSISSIP    |                   |                   | URUWU        |                 57|        557591312|                    1| N                      | Y                       |                  0| 07-NOV-2013           |           5185661373|                   0| 07-NOV-2013            |            5185661373|                 |        |                    |    213228188| MT          |            1|     0.0|               |                |           |              | 1000000019| AA         |             
-P        |  90808069| 07-NOV-2013  | SURAJ   | KHAN     | N         |               |           |           1| F     | 07-FEB-1970|            |                    |            | 07-NOV-2013         | 1030 MISSISSIP  |                 |                 | URUWU      |               37|      557591312|                  1| N                    | 07-NOV-2013           | 1030 MISSISSIP    |                   |                   | URUWU        |                 57|        557591312|                    1| N                      | Y                       |                  0| 07-NOV-2013           |           5185661373|                   0| 07-NOV-2013            |            5185661373|                 |        |                    |    213228188| MT          |           12|     0.0|               |                |           |              | 1000000020| AA         |             
+--------------------------------------------
+The wrong ouput is wrong because the it is not returning other columns which are transformed using other transformation rule(s) like T or D or O.
 
+Wrong output:
+AI input:
+{
+  "personind": "P",
+  "taxid": NaN,
+  "effectivedate": "11-NOV-2013",
+  "lastname": "AZTEFF",
+  "firstname": "AMAY",
+  "middlename": "AKNINE",
+  "namesalutation": NaN,
+  "namesuffix": NaN,
+  "citizenship": NaN,
+  "gender": NaN,
+  "dateofbirth": "06-FEB-1979",
+  "companyname": NaN,
+  "individualcontactid": NaN,
+  "dateofdeath": NaN,
+  "mailingeffectivedate": NaN,
+  "mailingaddrline1": NaN,
+  "mailingaddrline2": NaN,
+  "mailingaddrline3": NaN,
+  "mailingcity": NaN,
+  "mailingstatecode": NaN,
+  "mailingzipcode": NaN,
+  "mailingcountrycode": NaN,
+  "mailingforeignaddrind": NaN,
+  "residenceeffectivedate": NaN,
+  "residenceaddrline1": NaN,
+  "residenceaddrline2": NaN,
+  "residenceaddrline3": NaN,
+  "residencecity": NaN,
+  "residencestatecode": NaN,
+  "residencezipcode": NaN,
+  "residencecountrycode": NaN,
+  "residenceforeignaddrind": NaN,
+  "returnedaddressindicator": NaN,
+  "preferredphonetype": NaN,
+  "preferredeffectivedate": NaN,
+  "preferredphonenumber": NaN,
+  "additionalphonetype": NaN,
+  "additionaleffectivedate": NaN,
+  "additionalphonenumber": NaN,
+  "webeffectivedate": NaN,
+  "webtype": NaN,
+  "webaddress": NaN,
+  "policynumber": 213230955,
+  "policysuffix": "MT",
+  "relationcode": 7,
+  "distpct": 100.0,
+  "relattoinsured": "Spouse",
+  "relatcontuniqid": NaN,
+  "partyalert": NaN,
+  "contractalert": NaN,
+  "clientid": 1000000023,
+  "companytype": "AA",
+  "statecodecif": NaN
+}
+AI output:
+{'AddressID': '2023-24-11-12-00-00-000'}
 
 '''
