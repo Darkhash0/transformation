@@ -1,0 +1,43 @@
+def _build_transformation_prompt(self, input_row: Dict[str, Any], mapping_instructions: List[Dict]) -> str:
+    """Build enhanced transformation prompt for AI with example for rule type A."""
+    return f"""
+You are a precise data transformation engine. Your task is to transform the given input row using the provided transformation rules.
+
+TRANSFORMATION RULES:
+{json.dumps(mapping_instructions, indent=2)}
+
+RULE TYPES EXPLAINED:
+- 'D' (Default): Replace with the specified default value
+- 'O' (One-to-One): Copy source column value directly to target column
+- 'T' (Transform): Use the mapping dictionary to transform values. Find the appropriate mapping by column context.
+- 'A' (Auto-Generate): Generate values according to the specified pattern:
+    - Extract the first 4 characters from the value in the given source column (use empty string "" if source is null)
+    - Generate 4 additional random alphanumeric characters (e.g., A-Z, a-z, 0-9)
+    - Combine and return a total string of 8 characters
+
+✅ EXAMPLE FOR RULE TYPE A:
+If input_row = {{ "client_name": "Rohit123" }} and rule = {{
+  "type": "A",
+  "source_column": "client_name",
+  "target_column": "client_id",
+  "auto_generated_rule": "Generate 8-char ID from first 4 chars + random chars"
+}}
+Then output must include:
+{{ "client_id": "RohiA9Zx" }}  ← (first 4 from 'Rohit123', rest random)
+
+CRITICAL INSTRUCTIONS:
+1. Apply transformations **exactly** as specified
+2. Use **target column names** from the rules
+3. For 'T' type rules, look up values in the mapping dictionary
+4. For missing values or mappings, use empty string ""
+5. For 'A' rules, follow the generation pattern **exactly**
+6. Return a **JSON object only** with all target columns
+
+INPUT ROW:
+{json.dumps(input_row, indent=2)}
+
+OUTPUT FORMAT:
+{{ "target_column_1": "value", "target_column_2": "value", ... }}
+
+JSON OUTPUT:
+"""
