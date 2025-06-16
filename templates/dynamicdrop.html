@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Dynamic Dropdown</title>
+</head>
+<body>
+
+  <h3>Select Columns</h3>
+
+  <!-- This is where dropdowns will be added -->
+  <div id="dropdown-container"></div>
+
+  <!-- This is the + button -->
+  <button onclick="addDropdown()">+</button>
+
+  <script>
+    function addDropdown() {
+      // 1. Create a new <select> element
+      var dropdown = document.createElement("select");
+
+      // 2. Create options
+      var options = ["Name", "Age", "Gender"];
+      for (var i = 0; i < options.length; i++) {
+        var option = document.createElement("option");
+        option.value = options[i].toLowerCase();
+        option.text = options[i];
+        dropdown.appendChild(option);
+      }
+
+      // 3. Add a little space
+      var br = document.createElement("br");
+
+      // 4. Add dropdown and line break to the container
+      document.getElementById("dropdown-container").appendChild(dropdown);
+      document.getElementById("dropdown-container").appendChild(br);
+    }
+
+    // Add the first dropdown by default
+    addDropdown();
+  </script>
+
+</body>
+</html>
