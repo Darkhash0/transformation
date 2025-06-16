@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Form Page</title>
+  <script>
+    // This function adds a new dropdown dynamically
+    function addDropdown(sourceData) {
+      const container = document.getElementById("dropdowns-container");
+
+      // Create a new select element
+      const select = document.createElement("select");
+      select.name = "source_column";  // all dropdowns use same name
+
+      // Loop through the passed data
+      sourceData.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item;
+        option.text = item;
+        select.appendChild(option);
+      });
+
+      // Add a line break and append the select
+      container.appendChild(select);
+      container.appendChild(document.createElement("br"));
+    }
+
+    // Wait for page load
+    window.onload = function () {
+      // Parse the source_cls passed from Jinja (injected as JSON string)
+      const sourceData = JSON.parse('{{ source_cls | tojson | safe }}');
+      // Add first dropdown
+      addDropdown(sourceData);
+
+      // Store source data for later use
+      window.sourceData = sourceData;
+    };
+  </script>
+</head>
+<body>
+
+  <form action="/processing" method="post">
+    <label for="Rule">Transformation Rule selector:</label><br>
+    <select id="Rule" name="type">
+      <option value="T">T</option>
+    </select><br><br>
+
+    <label>Source Columns:</label><br>
+    <div id="dropdowns-container"></div>
+    <button type="button" onclick="addDropdown(window.sourceData)">+</button>
+    <br><br>
+
+    <label for="target_column">Target Column name:</label><br>
+    <input type="text" id="target_column" name="target_column"><br><br>
+
+    <label for="Value_Mapping">Value Mapping (key=value, one per line):</label><br>
+    <textarea id="Value_Mapping" name="mapping" rows="5" cols="30" 
+      placeholder="Male=M&#10;Female=F&#10;Others=O"></textarea><br><br>
+
+    <input type="submit" value="Submit">
+  </form>
+
+</body>
+</html>
