@@ -1,0 +1,162 @@
+<div class="spinner-div" *ngIf="loader">
+  <app-loader></app-loader>
+</div>
+
+<div class="container-grid">
+  <div class="column">
+    <div class="title-wrapper">Transformation Rules</div>
+
+    <div class="box class-cdb">
+      <div class="form-group">
+        <mat-form-field style="width: 20%">
+          <mat-label>Transformation Rule Selector</mat-label>
+          <mat-select [(ngModel)]="selectedRuleSelector">
+            <mat-option value="cform">C</mat-option>
+            <!-- <mat-option value="oform">O</mat-option> -->
+            <mat-option value="tform">T</mat-option>
+            <mat-option value="xform">X</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div *ngIf="selectedRuleSelector === 'cform'">
+          <div class="form-group" *ngFor="let col of sourceColumns; let i = index">
+            <div style="display: flex;align-items: center">
+            <mat-form-field style="width: 20%">
+              <mat-label>Source Column</mat-label>
+              <!-- <mat-select [(ngModel)]="selectedCourceColumn"> -->
+                <input matInput [(ngModel)]="scourceColumn" />
+              <!-- </mat-select> -->
+            </mat-form-field>
+              <button mat-raised-button color="primary" (click)="addSourceColumn()" style="margin-left: 8px">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <mat-form-field style="width: 20%">
+              <mat-label>Target Column Name</mat-label>
+              <input matInput [(ngModel)]="targetColumnName" />
+            </mat-form-field>
+          </div>
+          <div class="form-group">
+            <mat-form-field style="width: 40%">
+              <mat-label>Instructions</mat-label>
+              <textarea matInput [(ngModel)]="instructions"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div *ngIf="selectedRuleSelector === 'tform'">
+          <div class="form-group">
+            <mat-form-field style="width: 20%">
+              <mat-label>Source Column</mat-label>
+              <mat-select [(ngModel)]="scourceColumn">
+                <mat-option value="personInd">PersonInd</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="form-group">
+            <mat-form-field style="width: 20%">
+              <mat-label>Target Column Name</mat-label>
+              <input matInput [(ngModel)]="targetColumnName" />
+            </mat-form-field>
+          </div>
+          <div class="form-group">
+            <mat-form-field style="width: 40%">
+              <mat-label>Instructions</mat-label>
+              <textarea matInput [(ngModel)]="instructions"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div *ngIf="selectedRuleSelector === 'xform'">
+          <div class="form-group">
+            <mat-form-field style="width: 20%">
+              <mat-label>Source Column</mat-label>
+              <mat-select [(ngModel)]="scourceColumn">
+                <mat-option value="personInd">PersonInd</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="form-group">
+            <mat-form-field style="width: 20%">
+              <mat-label>Target Column Name</mat-label>
+              <input matInput [(ngModel)]="targetColumnName" />
+            </mat-form-field>
+          </div>
+          <div class="form-group">
+            <mat-form-field style="width: 40%">
+              <mat-label>Instructions</mat-label>
+              <textarea matInput [(ngModel)]="instructions"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- <div class="form-group">
+        <mat-form-field style="width: 20%">
+          <mat-label>Source Column</mat-label>
+          <mat-select [(ngModel)]="selectedCourceColumn">
+            <mat-option value="personInd">PersonInd</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="form-group">
+        <mat-form-field style="width: 20%">
+          <mat-label>Target Column Name</mat-label>
+          <input matInput [(ngModel)]="targetColumnName" />
+        </mat-form-field>
+      </div>
+      <div class="form-group">
+        <mat-form-field style="width: 40%">
+          <mat-label>Instructions</mat-label>
+          <textarea matInput [(ngModel)]="instructions"></textarea>
+        </mat-form-field>
+      </div> -->
+
+      <div class="buttons animated-buttons finalsubmit">
+        <button
+          mat-raised-button
+          style="background-color: #000048; color: #fff"
+          class="primary"
+          [disabled]="
+            !selectedRuleSelector ||
+            !scourceColumn ||
+            !targetColumnName ||
+            !instructions
+          "
+          (click)="onSubmit()"
+        >
+          Submit
+        </button>
+        <button
+          mat-raised-button
+          class="primary"
+          (click)="onPrevious()"
+          style="margin-left: 20px"
+        >
+          Previous
+        </button>
+        <button
+          mat-raised-button
+          class="primary"
+          (click)="onNext()"
+          style="margin-left: 20px"
+          [disabled]="!isNextDisabled"
+        >
+          Next
+        </button>
+        <button
+          mat-raised-button
+          class="primary"
+          (click)="onFinish()"
+          [disabled]="!isLastBreadcrumb()"
+          style="margin-left: 20px"
+        >
+          Finish
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
