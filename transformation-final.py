@@ -5,7 +5,7 @@ import numpy as np
 from langchain_openai import AzureChatOpenAI
 import gradio as gr
 
-os.environ["AZURE_OPENAI_API_KEY"] = "70683718b85747ea89724db4214873e7"
+os.environ["AZURE_OPENAI_API_KEY"] = "70683714873e7"
 os.environ["AZURE_OPENAI_ENDPOINT"] = "https://codedocumentation.openai.azure.com/"
 os.environ["AZURE_OPENAI_API_VERSION"] = "2024-02-15-preview"
 os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"] = "gpt-4o"
